@@ -1,0 +1,55 @@
+- hosts: <IP_of_Host>
+  tasks:
+   - name: Creating Docker Repo
+     yum_repository:
+          name: "docker"
+          baseurl: "https://download.docker.com/linux/centos/7/x86_64/stable"
+          description: "Docker Repo"
+          gpgcheck: no
+		   
+   - name: Installing Docker
+     command: yum install docker-ce --nobest -y
+	 
+   - name: Installing Python for Docker SDK
+     package:
+         name: python3
+         state: present
+		 
+   - name: Installing Python Docker SDK
+     pip:
+        name: docker
+		
+   - name: Starting and Enabling Docker
+     service:
+         name: docker
+         state: started
+         enabled: yes
+		 
+   - name: Pulling httpd Image from Docker Hub
+     docker_image:
+          name: "httpd"
+          source: pull
+		  
+   - name: Creating folder for Mounting Docker Conatiner
+     file:
+           name: "/webfolder"
+           state: directory
+		   
+   - name: Launching Docker Container with httpd Image & Exposing it
+     docker_container:
+          name: webserver
+          image: httpd
+          state: started
+          exposed_ports: "80"
+          ports: "8080:80"
+          volumes: "/webfolder:/usr/local/apache2/htdocs/"
+		  
+   - name: Copying webpage to Docker Container
+     copy:
+          dest: "/webfolder/index.html"
+          content: "Webserver Configured on Docker Using ANSIBLE!!!"
+		  
+   - name: Setting firewalld Rule
+     service:
+         name: firewalld
+         state: stopped
